@@ -1,0 +1,311 @@
+<!-- Page Header -->
+<div class="mb-6">
+  <h1 class="text-3xl font-bold text-gray-900 mb-2">Desempeño Mensual de Todas las Asignaciones</h1>
+  <p class="text-gray-600">Visualiza el rendimiento mensual de todos los municipios por división</p>
+</div>
+
+<!-- Error Message -->
+<% if (typeof error !== 'undefined' && error) { %>
+<div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+  <div class="flex items-center gap-2">
+    <%- include('../partials/icon', { name: 'exclamation-circle', class: 'h-5 w-5 text-red-600' }) %>
+    <p class="text-red-800"><%= error %></p>
+  </div>
+</div>
+<% } %>
+
+<!-- Month Selector Card -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+  <div class="flex items-center gap-2 mb-4">
+    <%- include('../partials/icon', { name: 'calendar', class: 'h-5 w-5 text-gray-700' }) %>
+    <h2 class="text-lg font-semibold text-gray-900">Seleccionar Mes</h2>
+  </div>
+  
+  <form action="/evaluacion/monthly" method="GET" id="monthSelectorForm" class="flex flex-col sm:flex-row gap-4">
+    <div class="flex-1">
+      <label for="monthSelector" class="block text-sm font-medium text-gray-700 mb-2">
+        Mes y Año
+      </label>
+      <input 
+        type="month" 
+        id="monthSelector" 
+        name="month"
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        value="<%= currentMonth %>"
+      >
+    </div>
+    <div class="flex items-end">
+      <button 
+        type="submit" 
+        id="updateButton"
+        class="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
+      >
+        <%- include('../partials/icon', { name: 'chart-bar', class: 'h-5 w-5' }) %>
+        <span id="buttonText">Actualizar</span>
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Monthly Performance Chart -->
+<% if (monthlyData && monthlyData.municipios && monthlyData.municipios.length > 0) { %>
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+  <div class="flex items-center gap-2 mb-6">
+    <%- include('../partials/icon', { name: 'chart-bar', class: 'h-5 w-5 text-gray-700' }) %>
+    <h2 class="text-lg font-semibold text-gray-900">Gráfico de Desempeño Mensual</h2>
+  </div>
+  
+  <div class="relative" style="height: 400px;">
+    <canvas id="monthlyPerformanceChart"></canvas>
+  </div>
+</div>
+
+<!-- Municipality Performance Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  <% monthlyData.municipios.forEach(municipio => { %>
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">
+      <!-- Municipality Header -->
+      <div class="flex items-center gap-2 mb-4">
+        <%- include('../partials/icon', { name: 'map-pin', class: 'h-5 w-5 text-gray-400' }) %>
+        <h3 class="font-semibold text-lg text-gray-900"><%= municipio.municipioNombre %></h3>
+      </div>
+      
+      <!-- Percentage Display -->
+      <div class="mb-4">
+        <div class="text-4xl font-bold mb-1 <%= municipio.porcentajeTotal >= 80 ? 'text-green-600' : municipio.porcentajeTotal >= 50 ? 'text-yellow-600' : 'text-red-600' %>">
+          <%= municipio.porcentajeTotal.toFixed(1) %>%
+        </div>
+        <p class="text-sm text-gray-600">
+          <%= municipio.totalTareasCompletadas %> de <%= municipio.totalTareasAsignadas %> tareas completadas
+        </p>
+      </div>
+      
+      <!-- Progress Bar -->
+      <div class="mb-4">
+        <div class="bg-gray-200 rounded-full h-3 overflow-hidden">
+          <div 
+            class="h-full rounded-full transition-all duration-500"
+            style="
+              width: <%= municipio.porcentajeTotal %>%;
+              background-color: <%= municipio.porcentajeTotal >= 80 ? '#10B981' : municipio.porcentajeTotal >= 50 ? '#F59E0B' : '#EF4444' %>;
+            "
+          ></div>
+        </div>
+      </div>
+      
+      <!-- Division Breakdown -->
+      <% if (municipio.divisionData && municipio.divisionData.length > 0) { %>
+      <div class="border-t border-gray-200 pt-4">
+        <h4 class="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+          Desglose por División
+        </h4>
+        <div class="space-y-2">
+          <% municipio.divisionData.forEach(division => { %>
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-gray-700 font-medium truncate flex-1 mr-2">
+                <%= division.divisionNombre %>
+              </span>
+              <span class="text-gray-600 whitespace-nowrap">
+                <%= division.tareasCompletadas %>/<%= division.tareasAsignadas %>
+                <span class="text-xs <%= division.porcentaje >= 80 ? 'text-green-600' : division.porcentaje >= 50 ? 'text-yellow-600' : 'text-red-600' %>">
+                  (<%= division.porcentaje.toFixed(0) %>%)
+                </span>
+              </span>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+      <% } %>
+    </div>
+  <% }); %>
+</div>
+<% } else { %>
+<!-- No Data Message -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+  <%- include('../partials/icon', { name: 'information-circle', class: 'h-16 w-16 text-gray-400 mx-auto mb-4' }) %>
+  <h3 class="text-lg font-semibold text-gray-900 mb-2">No hay datos disponibles</h3>
+  <p class="text-gray-600">
+    No se encontraron tareas o entregas para el mes seleccionado.
+  </p>
+</div>
+<% } %>
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<!-- Monthly Performance Chart Script -->
+<% if (monthlyData && monthlyData.municipios && monthlyData.municipios.length > 0) { %>
+<script>
+  // Monthly performance data from server
+  let monthlyData = <%- JSON.stringify(monthlyData) %>;
+  let chart = null;
+  
+  // Initialize chart when DOM is ready
+  document.addEventListener('DOMContentLoaded', function() {
+    initializeChart();
+    setupAjaxForm();
+  });
+  
+  function initializeChart() {
+    const ctx = document.getElementById('monthlyPerformanceChart');
+    
+    if (ctx && monthlyData && monthlyData.municipios && monthlyData.municipios.length > 0) {
+      // Prepare chart data
+      const labels = monthlyData.municipios.map(m => m.municipioNombre);
+      const data = monthlyData.municipios.map(m => m.porcentajeTotal);
+      const colors = monthlyData.municipios.map(m => {
+        if (m.porcentajeTotal >= 80) return '#10B981'; // green
+        if (m.porcentajeTotal >= 50) return '#F59E0B'; // yellow
+        return '#EF4444'; // red
+      });
+      
+      // Destroy existing chart if it exists
+      if (chart) {
+        chart.destroy();
+      }
+      
+      chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Porcentaje de Completitud',
+            data: data,
+            backgroundColor: colors,
+            borderColor: colors,
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100,
+              ticks: {
+                callback: function(value) {
+                  return value + '%';
+                }
+              },
+              title: {
+                display: true,
+                text: 'Porcentaje de Completitud'
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Municipios'
+              }
+            }
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const index = context.dataIndex;
+                  const municipio = monthlyData.municipios[index];
+                  return [
+                    'Porcentaje: ' + municipio.porcentajeTotal.toFixed(1) + '%',
+                    'Completadas: ' + municipio.totalTareasCompletadas + '/' + municipio.totalTareasAsignadas
+                  ];
+                },
+                afterLabel: function(context) {
+                  const index = context.dataIndex;
+                  const municipio = monthlyData.municipios[index];
+                  
+                  if (municipio.divisionData && municipio.divisionData.length > 0) {
+                    const result = ['', 'Por división:'];
+                    municipio.divisionData.forEach(division => {
+                      result.push('• ' + division.divisionNombre + ': ' + division.tareasCompletadas + '/' + division.tareasAsignadas + ' (' + division.porcentaje.toFixed(0) + '%)');
+                    });
+                    return result;
+                  }
+                  return '';
+                }
+              }
+            },
+            legend: {
+              display: false
+            },
+            title: {
+              display: true,
+              text: 'Desempeño Mensual - ' + monthlyData.mes,
+              font: {
+                size: 16,
+                weight: 'bold'
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+  
+  function setupAjaxForm() {
+    const form = document.getElementById('monthSelectorForm');
+    const monthSelector = document.getElementById('monthSelector');
+    const updateButton = document.getElementById('updateButton');
+    const buttonText = document.getElementById('buttonText');
+    
+    if (!form || !monthSelector || !updateButton) return;
+    
+    // Handle form submission with AJAX
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const selectedMonth = monthSelector.value;
+      if (!selectedMonth) return;
+      
+      // Show loading state
+      updateButton.disabled = true;
+      buttonText.textContent = 'Cargando...';
+      
+      try {
+        // Fetch new data
+        const response = await fetch(`/evaluacion/monthly?month=${selectedMonth}`, {
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Error al cargar los datos');
+        }
+        
+        // For now, we'll do a full page reload since we need to re-render the entire view
+        // In a future enhancement, we could return JSON and update the DOM dynamically
+        window.location.href = `/evaluacion/monthly?month=${selectedMonth}`;
+        
+      } catch (error) {
+        console.error('Error al actualizar datos:', error);
+        alert('Error al cargar los datos. Por favor, intente nuevamente.');
+        
+        // Reset button state
+        updateButton.disabled = false;
+        buttonText.textContent = 'Actualizar';
+      }
+    });
+    
+    // Auto-submit on month change
+    monthSelector.addEventListener('change', function() {
+      form.dispatchEvent(new Event('submit'));
+    });
+  }
+</script>
+<% } else { %>
+<script>
+  // Setup form even when there's no data
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('monthSelectorForm');
+    const monthSelector = document.getElementById('monthSelector');
+    
+    if (form && monthSelector) {
+      monthSelector.addEventListener('change', function() {
+        form.submit();
+      });
+    }
+  });
+</script>
+<% } %>

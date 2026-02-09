@@ -1,0 +1,464 @@
+<!-- Page Header -->
+<div class="mb-6">
+  <h1 class="text-3xl font-bold text-gray-900 mb-2">Evaluación de Desempeño</h1>
+  <p class="text-gray-600">Analiza el rendimiento de los municipios por división y período</p>
+</div>
+
+<!-- Municipality Performance Chart Section -->
+<% if (typeof performanceData !== 'undefined' && performanceData && performanceData.length > 0) { %>
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+  <div class="flex items-center gap-2 mb-6">
+    <%- include('../partials/icon', { name: 'chart-bar', class: 'h-5 w-5 text-gray-700' }) %>
+    <h2 class="text-lg font-semibold text-gray-900">Desempeño de Todos los Municipios</h2>
+  </div>
+  
+  <div class="mb-4">
+    <p class="text-sm text-gray-600">
+      Visualización del porcentaje de tareas completadas por cada municipio
+    </p>
+  </div>
+  
+  <!-- Chart Canvas -->
+  <div class="relative" style="height: 400px;">
+    <canvas id="municipalityPerformanceChart"></canvas>
+  </div>
+  
+  <!-- Chart Legend -->
+  <div class="mt-6 pt-6 border-t border-gray-200">
+    <h3 class="text-sm font-semibold text-gray-900 mb-3">Información del Gráfico</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <% performanceData.slice(0, 6).forEach(data => { %>
+        <div class="flex items-center gap-2">
+          <div class="w-4 h-4 rounded" style="background-color: <%= data.color %>;"></div>
+          <span class="text-sm text-gray-700"><%= data.municipioNombre %>: <%= data.porcentajeCompletado %>%</span>
+        </div>
+      <% }); %>
+      <% if (performanceData.length > 6) { %>
+        <div class="text-sm text-gray-500 italic">
+          ... y <%= performanceData.length - 6 %> más
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+<% } %>
+
+
+<!-- Filters Card -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+  <div class="flex items-center gap-2 mb-4">
+    <%- include('../partials/icon', { name: 'chart-bar', class: 'h-5 w-5 text-gray-700' }) %>
+    <h2 class="text-lg font-semibold text-gray-900">Seleccionar Período y División</h2>
+  </div>
+  
+  <form action="/evaluacion/calcular" method="GET">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+      <!-- Mes -->
+      <div>
+        <label for="mes" class="block text-sm font-medium text-gray-700 mb-1">
+          Mes <span class="text-red-500">*</span>
+        </label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <%- include('../partials/icon', { name: 'calendar', class: 'h-5 w-5 text-gray-400' }) %>
+          </div>
+          <select 
+            id="mes" 
+            name="mes" 
+            class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
+            required
+          >
+            <option value="">Seleccione mes</option>
+            <option value="1" <%= filtros.mes == '1' ? 'selected' : '' %>>Enero</option>
+            <option value="2" <%= filtros.mes == '2' ? 'selected' : '' %>>Febrero</option>
+            <option value="3" <%= filtros.mes == '3' ? 'selected' : '' %>>Marzo</option>
+            <option value="4" <%= filtros.mes == '4' ? 'selected' : '' %>>Abril</option>
+            <option value="5" <%= filtros.mes == '5' ? 'selected' : '' %>>Mayo</option>
+            <option value="6" <%= filtros.mes == '6' ? 'selected' : '' %>>Junio</option>
+            <option value="7" <%= filtros.mes == '7' ? 'selected' : '' %>>Julio</option>
+            <option value="8" <%= filtros.mes == '8' ? 'selected' : '' %>>Agosto</option>
+            <option value="9" <%= filtros.mes == '9' ? 'selected' : '' %>>Septiembre</option>
+            <option value="10" <%= filtros.mes == '10' ? 'selected' : '' %>>Octubre</option>
+            <option value="11" <%= filtros.mes == '11' ? 'selected' : '' %>>Noviembre</option>
+            <option value="12" <%= filtros.mes == '12' ? 'selected' : '' %>>Diciembre</option>
+          </select>
+          <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Año -->
+      <div>
+        <label for="anio" class="block text-sm font-medium text-gray-700 mb-1">
+          Año <span class="text-red-500">*</span>
+        </label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <%- include('../partials/icon', { name: 'calendar', class: 'h-5 w-5 text-gray-400' }) %>
+          </div>
+          <select 
+            id="anio" 
+            name="anio" 
+            class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
+            required
+          >
+            <option value="">Seleccione año</option>
+            <option value="2026" <%= filtros.anio == '2026' ? 'selected' : '' %>>2026</option>
+            <option value="2027" <%= filtros.anio == '2027' ? 'selected' : '' %>>2027</option>
+            <option value="2028" <%= filtros.anio == '2028' ? 'selected' : '' %>>2028</option>
+            <option value="2029" <%= filtros.anio == '2029' ? 'selected' : '' %>>2029</option>
+            <option value="2030" <%= filtros.anio == '2030' ? 'selected' : '' %>>2030</option>
+          </select>
+          <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+      </div>
+      
+      <!-- División -->
+      <div class="md:col-span-2">
+        <label for="divisionId" class="block text-sm font-medium text-gray-700 mb-1">
+          División <span class="text-red-500">*</span>
+        </label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <%- include('../partials/icon', { name: 'building-office', class: 'h-5 w-5 text-gray-400' }) %>
+          </div>
+          <select 
+            id="divisionId" 
+            name="divisionId" 
+            class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
+            required
+          >
+            <option value="">Seleccione una división</option>
+            <% divisiones.forEach(division => { %>
+              <option value="<%= division.id %>" <%= filtros.divisionId == division.id ? 'selected' : '' %>>
+                <%= division.nombre %>
+              </option>
+            <% }); %>
+          </select>
+          <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Action Button -->
+    <button type="submit" class="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium">
+      <%- include('../partials/icon', { name: 'chart-bar', class: 'h-5 w-5' }) %>
+      Calcular Desempeño
+    </button>
+  </form>
+</div>
+
+<!-- Results Section -->
+<% if (resultados) { %>
+  <!-- Summary Card -->
+  <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg shadow-sm border border-blue-200 p-6 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="flex items-center gap-3">
+        <div class="p-3 bg-blue-600 rounded-lg">
+          <%- include('../partials/icon', { name: 'building-office', class: 'h-6 w-6 text-white' }) %>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600 font-medium">División</p>
+          <p class="text-lg font-bold text-gray-900"><%= resultados.division %></p>
+        </div>
+      </div>
+      
+      <div class="flex items-center gap-3">
+        <div class="p-3 bg-blue-600 rounded-lg">
+          <%- include('../partials/icon', { name: 'calendar', class: 'h-6 w-6 text-white' }) %>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600 font-medium">Período</p>
+          <p class="text-lg font-bold text-gray-900">
+            <%= ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][resultados.mes - 1] %> 
+            <%= resultados.anio %>
+          </p>
+        </div>
+      </div>
+      
+      <div class="flex items-center gap-3">
+        <div class="p-3 bg-blue-600 rounded-lg">
+          <%- include('../partials/icon', { name: 'clipboard-document-list', class: 'h-6 w-6 text-white' }) %>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600 font-medium">Total de Actividades</p>
+          <p class="text-lg font-bold text-gray-900">
+            <%= resultados.totalActividades %> actividad<%= resultados.totalActividades !== 1 ? 'es' : '' %>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Results Card -->
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div class="flex items-center gap-2 mb-6">
+      <%- include('../partials/icon', { name: 'chart-bar', class: 'h-5 w-5 text-gray-700' }) %>
+      <h2 class="text-lg font-semibold text-gray-900">Resultados de Evaluación</h2>
+    </div>
+    
+    <% if (resultados.totalActividades === 0) { %>
+      <div class="text-center py-12">
+        <%- include('../partials/icon', { name: 'information-circle', class: 'h-12 w-12 text-gray-400 mx-auto mb-3' }) %>
+        <p class="text-gray-600">No hay actividades registradas para esta división en el período seleccionado</p>
+      </div>
+    <% } else { %>
+      <!-- Desktop Table -->
+      <div class="hidden md:block overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gradient-to-r from-blue-50 to-blue-100">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-20">
+                Posición
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                Municipio
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                Actividades Cumplidas
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                Porcentaje de Cumplimiento
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <% resultados.desempeno.forEach((item, index) => { %>
+              <tr class="hover:bg-gray-50 transition-colors duration-150">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center gap-2">
+                    <% if (index === 0) { %>
+                      <span class="text-2xl">🥇</span>
+                    <% } else if (index === 1) { %>
+                      <span class="text-2xl">🥈</span>
+                    <% } else if (index === 2) { %>
+                      <span class="text-2xl">🥉</span>
+                    <% } %>
+                    <span class="text-lg font-bold text-blue-600">#<%= index + 1 %></span>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center gap-2">
+                    <%- include('../partials/icon', { name: 'map-pin', class: 'h-5 w-5 text-gray-400' }) %>
+                    <span class="text-sm font-medium text-gray-900"><%= item.municipio %></span>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="text-sm text-gray-900">
+                    <span class="font-semibold text-blue-600"><%= item.tareasCumplidas %></span>/<%= item.totalTareas %> actividades
+                  </span>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-3">
+                    <!-- Progress Bar -->
+                    <div class="flex-1 bg-gray-200 rounded-full h-6 overflow-hidden min-w-[150px]">
+                      <div 
+                        class="h-full rounded-full transition-all duration-500 ease-out flex items-center justify-end pr-2"
+                        style="
+                          width: <%= item.porcentaje %>%;
+                          background-color: <%= item.porcentaje >= 80 ? '#10B981' : item.porcentaje >= 50 ? '#F59E0B' : '#EF4444' %>;
+                        "
+                      >
+                        <% if (item.porcentaje > 15) { %>
+                          <span class="text-xs font-bold text-white"><%= item.porcentaje %>%</span>
+                        <% } %>
+                      </div>
+                    </div>
+                    <!-- Percentage Badge -->
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold min-w-[60px] justify-center <%= item.porcentaje >= 80 ? 'bg-green-100 text-green-800' : item.porcentaje >= 50 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800' %>">
+                      <%= item.porcentaje %>%
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Mobile Cards -->
+      <div class="md:hidden space-y-4">
+        <% resultados.desempeno.forEach((item, index) => { %>
+          <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+            <!-- Position and Municipality -->
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <% if (index === 0) { %>
+                  <span class="text-2xl">🥇</span>
+                <% } else if (index === 1) { %>
+                  <span class="text-2xl">🥈</span>
+                <% } else if (index === 2) { %>
+                  <span class="text-2xl">🥉</span>
+                <% } %>
+                <span class="text-lg font-bold text-blue-600">#<%= index + 1 %></span>
+              </div>
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold <%= item.porcentaje >= 80 ? 'bg-green-100 text-green-800' : item.porcentaje >= 50 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800' %>">
+                <%= item.porcentaje %>%
+              </span>
+            </div>
+            
+            <div class="flex items-center gap-2 mb-3">
+              <%- include('../partials/icon', { name: 'map-pin', class: 'h-5 w-5 text-gray-400' }) %>
+              <h3 class="font-semibold text-gray-900"><%= item.municipio %></h3>
+            </div>
+            
+            <!-- Activities -->
+            <div class="mb-3">
+              <p class="text-sm text-gray-600 mb-1">Actividades Cumplidas</p>
+              <p class="text-base text-gray-900">
+                <span class="font-semibold text-blue-600"><%= item.tareasCumplidas %></span>/<%= item.totalTareas %> actividades
+              </p>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="bg-gray-200 rounded-full h-6 overflow-hidden">
+              <div 
+                class="h-full rounded-full transition-all duration-500 ease-out flex items-center justify-center"
+                style="
+                  width: <%= item.porcentaje %>%;
+                  background-color: <%= item.porcentaje >= 80 ? '#10B981' : item.porcentaje >= 50 ? '#F59E0B' : '#EF4444' %>;
+                "
+              >
+                <% if (item.porcentaje > 15) { %>
+                  <span class="text-xs font-bold text-white"><%= item.porcentaje %>%</span>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+      
+      <!-- Legend -->
+      <div class="mt-6 pt-6 border-t border-gray-200">
+        <h3 class="text-sm font-semibold text-gray-900 mb-3">Leyenda de Colores</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 bg-green-500 rounded"></div>
+            <span class="text-sm text-gray-700">80% - 100% (Excelente)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 bg-yellow-500 rounded"></div>
+            <span class="text-sm text-gray-700">50% - 79% (Regular)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 bg-red-500 rounded"></div>
+            <span class="text-sm text-gray-700">0% - 49% (Bajo)</span>
+          </div>
+        </div>
+      </div>
+    <% } %>
+  </div>
+<% } %>
+
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<!-- Performance Chart Script -->
+<% if (typeof performanceData !== 'undefined' && performanceData && performanceData.length > 0) { %>
+<script>
+  // Performance data from server
+  const performanceData = <%- JSON.stringify(performanceData) %>;
+  
+  // Initialize chart when DOM is ready
+  document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('municipalityPerformanceChart');
+    
+    if (ctx && performanceData && performanceData.length > 0) {
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: performanceData.map(d => d.municipioNombre),
+          datasets: [{
+            label: 'Porcentaje de Tareas Completadas',
+            data: performanceData.map(d => d.porcentajeCompletado),
+            backgroundColor: performanceData.map(d => d.color),
+            borderColor: performanceData.map(d => d.color),
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100,
+              ticks: {
+                callback: function(value) {
+                  return value + '%';
+                }
+              },
+              title: {
+                display: true,
+                text: 'Porcentaje de Completitud'
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Municipios'
+              }
+            }
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const index = context.dataIndex;
+                  const data = performanceData[index];
+                  return [
+                    'Porcentaje: ' + data.porcentajeCompletado + '%',
+                    'Completadas: ' + data.tareasCompletadas + '/' + data.totalTareas
+                  ];
+                },
+                afterLabel: function(context) {
+                  const index = context.dataIndex;
+                  const data = performanceData[index];
+                  
+                  if (data.actividadesCompletadas && data.actividadesCompletadas.length > 0) {
+                    const activities = data.actividadesCompletadas.slice(0, 5);
+                    const result = ['', 'Actividades completadas:'];
+                    activities.forEach(activity => {
+                      result.push('• ' + activity);
+                    });
+                    
+                    if (data.actividadesCompletadas.length > 5) {
+                      result.push('... y ' + (data.actividadesCompletadas.length - 5) + ' más');
+                    }
+                    
+                    return result;
+                  }
+                  return '';
+                }
+              }
+            },
+            legend: {
+              display: false
+            },
+            title: {
+              display: true,
+              text: 'Desempeño de Municipios - Todas las Tareas',
+              font: {
+                size: 16,
+                weight: 'bold'
+              }
+            }
+          }
+        }
+      });
+    }
+  });
+</script>
+<% } %>

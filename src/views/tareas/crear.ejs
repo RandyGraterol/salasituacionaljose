@@ -1,0 +1,157 @@
+<!-- Page Header -->
+<div class="mb-8">
+  <h1 class="text-3xl font-bold text-gray-900 mb-2">Crear Nueva Tarea</h1>
+  <p class="text-gray-600">Registre una nueva asignación para las divisiones del CDCE</p>
+</div>
+
+<!-- Alerts -->
+<% if (error) { %>
+  <div class="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-start gap-3 animate-fade-in">
+    <%- include('../partials/icon', { name: 'x-circle', class: 'h-5 w-5 flex-shrink-0 mt-0.5' }) %>
+    <span><%= error %></span>
+  </div>
+<% } %>
+
+<% if (success) { %>
+  <div class="mb-6 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-start gap-3 animate-fade-in">
+    <%- include('../partials/icon', { name: 'check-circle', class: 'h-5 w-5 flex-shrink-0 mt-0.5' }) %>
+    <span><%= success %></span>
+  </div>
+<% } %>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- Form Card -->
+  <div class="lg:col-span-2">
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <form action="/tareas/crear" method="POST" class="space-y-6">
+        <!-- Nombre de la Tarea -->
+        <div>
+          <label for="nombre" class="block text-sm font-medium text-gray-700 mb-2">
+            Nombre de la Tarea <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <%- include('../partials/icon', { name: 'document-text', class: 'h-5 w-5 text-gray-400' }) %>
+            </div>
+            <input 
+              type="text" 
+              id="nombre" 
+              name="nombre" 
+              class="pl-10 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
+              placeholder="Ej: Festival Deportivo Nacional"
+              required
+            >
+          </div>
+        </div>
+        
+        <!-- División -->
+        <div>
+          <label for="divisionId" class="block text-sm font-medium text-gray-700 mb-2">
+            División o Coordinación <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <%- include('../partials/icon', { name: 'building-office', class: 'h-5 w-5 text-gray-400' }) %>
+            </div>
+            <select 
+              id="divisionId" 
+              name="divisionId" 
+              class="pl-10 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none bg-white" 
+              required
+            >
+              <option value="">Seleccione una división</option>
+              <% divisiones.forEach(division => { %>
+                <option value="<%= division.id %>"><%= division.nombre %></option>
+              <% }); %>
+            </select>
+            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Fechas -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Fecha de Inicio -->
+          <div>
+            <label for="fechaInicio" class="block text-sm font-medium text-gray-700 mb-2">
+              Fecha de Inicio <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <%- include('../partials/icon', { name: 'calendar', class: 'h-5 w-5 text-gray-400' }) %>
+              </div>
+              <input 
+                type="date" 
+                id="fechaInicio" 
+                name="fechaInicio" 
+                class="pl-10 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
+                required
+              >
+            </div>
+          </div>
+          
+          <!-- Fecha de Culminación -->
+          <div>
+            <label for="fechaCulminacion" class="block text-sm font-medium text-gray-700 mb-2">
+              Fecha de Culminación <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <%- include('../partials/icon', { name: 'calendar', class: 'h-5 w-5 text-gray-400' }) %>
+              </div>
+              <input 
+                type="date" 
+                id="fechaCulminacion" 
+                name="fechaCulminacion" 
+                class="pl-10 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
+                required
+              >
+            </div>
+          </div>
+        </div>
+        
+        <!-- Buttons -->
+        <div class="flex flex-col sm:flex-row gap-3 pt-4">
+          <button 
+            type="submit" 
+            class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200"
+          >
+            <%- include('../partials/icon', { name: 'plus', class: 'h-5 w-5' }) %>
+            <span>Crear Tarea</span>
+          </button>
+          <a 
+            href="/tareas/proceso" 
+            class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200"
+          >
+            <%- include('../partials/icon', { name: 'x-mark', class: 'h-5 w-5' }) %>
+            <span>Cancelar</span>
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Info Card -->
+  <div class="lg:col-span-1">
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 sticky top-6">
+      <div class="flex items-start gap-3 mb-4">
+        <%- include('../partials/icon', { name: 'information-circle', class: 'h-6 w-6 text-blue-600 flex-shrink-0' }) %>
+        <h2 class="text-lg font-semibold text-blue-900">Información</h2>
+      </div>
+      <div class="space-y-3 text-sm text-blue-800">
+        <p>
+          Las tareas creadas se mostrarán automáticamente en el módulo de <strong>"Tareas en Proceso"</strong>.
+        </p>
+        <p>
+          Desde allí podrá registrar las entregas de los municipios y hacer seguimiento del cumplimiento.
+        </p>
+        <p>
+          Las tareas cambiarán automáticamente a estado <strong>"Finalizada"</strong> cuando se alcance la fecha de culminación.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
