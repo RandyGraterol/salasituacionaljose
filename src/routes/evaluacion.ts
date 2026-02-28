@@ -1,5 +1,13 @@
 import { Router } from 'express';
-import { showEvaluacion, calcularDesempeno, showDesempenoMunicipios, showMonthlyPerformance } from '../controllers/evaluacionController';
+import { 
+  showEvaluacion, 
+  calcularDesempeno, 
+  showDesempenoMunicipios, 
+  showMonthlyPerformance,
+  showEvaluacionAvanzada,
+  showEvaluacionMunicipio,
+  showRanking
+} from '../controllers/evaluacionController';
 import { requireAuth } from '../middleware/auth';
 
 const router = Router();
@@ -18,5 +26,10 @@ router.get('/desempeno-municipios', showDesempenoMunicipios);
 
 // Ruta para mostrar desempeño mensual de todas las asignaciones
 router.get('/monthly', showMonthlyPerformance);
+
+// Rutas para evaluación avanzada
+router.get('/avanzada', showEvaluacionAvanzada);
+router.get('/municipio/:id', showEvaluacionMunicipio);
+router.get('/ranking', showRanking);
 
 export default router;

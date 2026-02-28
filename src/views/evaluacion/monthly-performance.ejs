@@ -280,7 +280,16 @@
         
       } catch (error) {
         console.error('Error al actualizar datos:', error);
-        alert('Error al cargar los datos. Por favor, intente nuevamente.');
+        if (window.modal) {
+          window.modal.notify({
+            title: 'Error',
+            message: 'Error al cargar los datos. Por favor, intente nuevamente.',
+            type: 'error',
+            buttonText: 'Entendido'
+          });
+        } else {
+          alert('Error al cargar los datos. Por favor, intente nuevamente.');
+        }
         
         // Reset button state
         updateButton.disabled = false;

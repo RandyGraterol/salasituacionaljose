@@ -65,7 +65,7 @@
                     <%- include('../partials/icon', { name: 'pencil', class: 'h-4 w-4' }) %>
                     Editar
                   </a>
-                  <form action="/municipios/<%= municipio.id %>/eliminar" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar este municipio?');" class="inline">
+                  <form action="/municipios/<%= municipio.id %>/eliminar" method="POST" onsubmit="return confirmarEliminacionMunicipio('<%= municipio.nombre %>');" class="inline">
                     <button type="submit" class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors duration-200">
                       <%- include('../partials/icon', { name: 'trash', class: 'h-4 w-4' }) %>
                       Eliminar
@@ -92,7 +92,7 @@
               <%- include('../partials/icon', { name: 'pencil', class: 'h-4 w-4' }) %>
               Editar
             </a>
-            <form action="/municipios/<%= municipio.id %>/eliminar" method="POST" onsubmit="return confirm('¿Estás seguro?');" class="flex-1">
+            <form action="/municipios/<%= municipio.id %>/eliminar" method="POST" onsubmit="return confirmarEliminacionMunicipio('<%= municipio.nombre %>');" class="flex-1">
               <button type="submit" class="w-full inline-flex items-center justify-center gap-1 px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors duration-200">
                 <%- include('../partials/icon', { name: 'trash', class: 'h-4 w-4' }) %>
                 Eliminar
@@ -104,3 +104,35 @@
     </div>
   <% } %>
 </div>
+
+<script>
+  function confirmarEliminacionMunicipio(nombreMunicipio) {
+    // Capturar el evento y el formulario
+    const currentEvent = event;
+    const form = currentEvent.target.closest('form');
+    
+    if (window.modal) {
+      window.modal.confirm({
+        title: 'Eliminar Municipio',
+        message: `
+          <p class="mb-3">¿Está seguro de eliminar el municipio <strong>"${nombreMunicipio}"</strong>?</p>
+          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <p class="text-sm font-semibold text-yellow-800">⚠️ Advertencia</p>
+            <p class="text-sm text-yellow-700">Esta acción no se puede deshacer.</p>
+          </div>
+        `,
+        confirmText: 'Sí, Eliminar',
+        cancelText: 'Cancelar',
+        type: 'danger',
+        onConfirm: function() {
+          if (form) {
+            form.submit();
+          }
+        }
+      });
+      return false;
+    } else {
+      return confirm('¿Está seguro de eliminar el municipio "' + nombreMunicipio + '"?');
+    }
+  }
+</script>

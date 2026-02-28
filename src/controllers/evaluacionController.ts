@@ -2,6 +2,11 @@ import { Request, Response } from 'express';
 import { Division, Tarea, Entrega, Municipio } from '../models';
 import { Op } from 'sequelize';
 import { getMunicipalityPerformanceData, getMonthlyPerformance } from '../services/performanceService';
+import { 
+  getAllMunicipalitiesComprehensiveEvaluation,
+  getMunicipalityComprehensiveEvaluation,
+  getMunicipalityRanking 
+} from '../services/advancedEvaluationService';
 
 // Mostrar página de evaluación
 export const showEvaluacion = async (req: Request, res: Response): Promise<void> => {
@@ -110,16 +115,19 @@ export const calcularDesempeno = async (req: Request, res: Response): Promise<vo
 
     // Calcular desempeño por municipio
     const desempenoPorMunicipio = municipios.map(municipio => {
-      // Contar cuántas tareas cumplió este municipio
+      // Contar cuántas tareas cumplió este municipio y total de entregas
       let tareasCumplidas = 0;
+      let totalEntregas = 0;
 
       tareas.forEach(tarea => {
         const entregas = (tarea as any).entregas;
-        const entregaMunicipio = entregas?.find(
+        const entregasMunicipio = entregas?.filter(
           (entrega: any) => entrega.municipioId === municipio.id
         );
-        if (entregaMunicipio) {
+        
+        if (entregasMunicipio && entregasMunicipio.length > 0) {
           tareasCumplidas++;
+          totalEntregas += entregasMunicipio.length;
         }
       });
 
@@ -132,6 +140,7 @@ export const calcularDesempeno = async (req: Request, res: Response): Promise<vo
         municipio: municipio.nombre,
         tareasCumplidas,
         totalTareas,
+        totalEntregas,
         porcentaje
       };
     });
@@ -275,6 +284,187 @@ export const showMonthlyPerformance = async (req: Request, res: Response): Promi
       currentMonth,
       currentPage: 'evaluacion',
       error: 'Error al cargar los datos de desempeño mensual'
+    });
+  }
+};
+
+
+/**
+ * Show comprehensive evaluation dashboard
+ * 
+ * Displays advanced evaluation metrics including punctuality, quantity, and quality
+ * 
+ * Requirements: Enhanced evaluation system
+ */
+export const showEvaluacionAvanzada = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { mes, anio, divisionId } = req.query;
+
+    // Build filters
+    let filtros: any = {};
+    
+    if (mes && anio) {
+      const mesNum = parseInt(mes as string);
+      const anioNum = parseInt(anio as string);
+      filtros.fechaInicio = new Date(anioNum, mesNum - 1, 1);
+      filtros.fechaFin = new Date(anioNum, mesNum, 0, 23, 59, 59);
+    }
+    
+    if (divisionId) {
+      filtros.divisionId = parseInt(divisionId as string);
+    }
+
+    // Get comprehensive evaluation for all municipalities
+    const evaluaciones = await getAllMunicipalitiesComprehensiveEvaluation(
+      Object.keys(filtros).length > 0 ? filtros : undefined
+    );
+
+    // Get all divisions for filter
+    const divisiones = await Division.findAll({
+      order: [['nombre', 'ASC']]
+    });
+
+    res.render('evaluacion/avanzada', {
+      title: 'Evaluación Avanzada de Municipios',
+      evaluaciones,
+      divisiones,
+      filtros: {
+        mes: mes || '',
+        anio: anio || '',
+        divisionId: divisionId || ''
+      },
+      currentPage: 'evaluacion'
+    });
+  } catch (error) {
+    console.error('Error al cargar evaluación avanzada:', error);
+    const divisiones = await Division.findAll({ order: [['nombre', 'ASC']] });
+    res.render('evaluacion/avanzada', {
+      title: 'Evaluación Avanzada de Municipios',
+      evaluaciones: [],
+      divisiones,
+      filtros: {
+        mes: req.query.mes || '',
+        anio: req.query.anio || '',
+        divisionId: req.query.divisionId || ''
+      },
+      currentPage: 'evaluacion',
+      error: 'Error al cargar los datos de evaluación avanzada'
+    });
+  }
+};
+
+/**
+ * Show detailed evaluation for a specific municipality
+ * 
+ * Displays comprehensive metrics and task-by-task breakdown
+ */
+export const showEvaluacionMunicipio = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { mes, anio, divisionId } = req.query;
+
+    // Build filters
+    let filtros: any = {};
+    
+    if (mes && anio) {
+      const mesNum = parseInt(mes as string);
+      const anioNum = parseInt(anio as string);
+      filtros.fechaInicio = new Date(anioNum, mesNum - 1, 1);
+      filtros.fechaFin = new Date(anioNum, mesNum, 0, 23, 59, 59);
+    }
+    
+    if (divisionId) {
+      filtros.divisionId = parseInt(divisionId as string);
+    }
+
+    // Get comprehensive evaluation for the municipality
+    const evaluacion = await getMunicipalityComprehensiveEvaluation(
+      parseInt(id),
+      Object.keys(filtros).length > 0 ? filtros : undefined
+    );
+
+    // Get all divisions for filter
+    const divisiones = await Division.findAll({
+      order: [['nombre', 'ASC']]
+    });
+
+    res.render('evaluacion/detalle-municipio', {
+      title: `Evaluación Detallada: ${evaluacion.municipioNombre}`,
+      evaluacion,
+      divisiones,
+      filtros: {
+        mes: mes || '',
+        anio: anio || '',
+        divisionId: divisionId || ''
+      },
+      currentPage: 'evaluacion'
+    });
+  } catch (error) {
+    console.error('Error al cargar evaluación del municipio:', error);
+    res.redirect('/evaluacion/avanzada?error=municipio_no_encontrado');
+  }
+};
+
+/**
+ * Show ranking by specific metric
+ */
+export const showRanking = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { metrica, mes, anio, divisionId } = req.query;
+    const metricaSeleccionada = (metrica as string) || 'final';
+
+    // Build filters
+    let filtros: any = {};
+    
+    if (mes && anio) {
+      const mesNum = parseInt(mes as string);
+      const anioNum = parseInt(anio as string);
+      filtros.fechaInicio = new Date(anioNum, mesNum - 1, 1);
+      filtros.fechaFin = new Date(anioNum, mesNum, 0, 23, 59, 59);
+    }
+    
+    if (divisionId) {
+      filtros.divisionId = parseInt(divisionId as string);
+    }
+
+    // Get ranking
+    const ranking = await getMunicipalityRanking(
+      metricaSeleccionada as any,
+      Object.keys(filtros).length > 0 ? filtros : undefined
+    );
+
+    // Get all divisions for filter
+    const divisiones = await Division.findAll({
+      order: [['nombre', 'ASC']]
+    });
+
+    res.render('evaluacion/ranking', {
+      title: 'Ranking de Municipios',
+      ranking,
+      divisiones,
+      metricaSeleccionada,
+      filtros: {
+        mes: mes || '',
+        anio: anio || '',
+        divisionId: divisionId || ''
+      },
+      currentPage: 'evaluacion'
+    });
+  } catch (error) {
+    console.error('Error al cargar ranking:', error);
+    const divisiones = await Division.findAll({ order: [['nombre', 'ASC']] });
+    res.render('evaluacion/ranking', {
+      title: 'Ranking de Municipios',
+      ranking: [],
+      divisiones,
+      metricaSeleccionada: 'final',
+      filtros: {
+        mes: req.query.mes || '',
+        anio: req.query.anio || '',
+        divisionId: req.query.divisionId || ''
+      },
+      currentPage: 'evaluacion',
+      error: 'Error al cargar el ranking'
     });
   }
 };

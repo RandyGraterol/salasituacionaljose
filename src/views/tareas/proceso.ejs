@@ -4,6 +4,39 @@
   <p class="text-gray-600">Seleccione una división para ver sus tareas activas</p>
 </div>
 
+<!-- Alerts -->
+<% if (typeof error !== 'undefined' && error) { %>
+  <div class="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-start gap-3 animate-fade-in">
+    <%- include('../partials/icon', { name: 'x-circle', class: 'h-5 w-5 flex-shrink-0 mt-0.5' }) %>
+    <span>
+      <% if (error === 'tarea_no_encontrada') { %>
+        La tarea no fue encontrada
+      <% } else if (error === 'tarea_ya_finalizada') { %>
+        Esta tarea ya está finalizada
+      <% } else if (error === 'error_servidor') { %>
+        Error al procesar la solicitud
+      <% } else { %>
+        <%= error %>
+      <% } %>
+    </span>
+  </div>
+<% } %>
+
+<% if (typeof success !== 'undefined' && success) { %>
+  <div class="mb-6 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-start gap-3 animate-fade-in">
+    <%- include('../partials/icon', { name: 'check-circle', class: 'h-5 w-5 flex-shrink-0 mt-0.5' }) %>
+    <span>
+      <% if (success === 'tarea_finalizada') { %>
+        Tarea finalizada exitosamente
+      <% } else if (success === 'tarea_eliminada') { %>
+        Tarea eliminada exitosamente
+      <% } else { %>
+        <%= success %>
+      <% } %>
+    </span>
+  </div>
+<% } %>
+
 <!-- Divisiones Grid -->
 <div class="mb-8">
   <h2 class="text-xl font-semibold text-gray-900 mb-4">Divisiones con Tareas Activas</h2>
@@ -71,7 +104,7 @@
               Fecha de Inicio
             </th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Fecha de Culminación
+              Fecha y Hora de Culminación
             </th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Entregas
@@ -94,7 +127,14 @@
                 <%= new Date(tarea.fechaInicio).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) %>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <%= new Date(tarea.fechaCulminacion).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+                <div class="flex flex-col">
+                  <span class="font-medium text-gray-900">
+                    <%= new Date(tarea.fechaCulminacion).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+                  </span>
+                  <span class="text-xs text-gray-500">
+                    <%= new Date(tarea.fechaCulminacion).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true }) %>
+                  </span>
+                </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
@@ -102,13 +142,45 @@
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm">
-                <a 
-                  href="/tareas/detalle/<%= tarea.id %>" 
-                  class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
-                >
-                  <%- include('../partials/icon', { name: 'eye', class: 'h-4 w-4' }) %>
-                  <span>Ver Detalle</span>
-                </a>
+                <div class="flex items-center gap-2">
+                  <a 
+                    href="/tareas/detalle/<%= tarea.id %>" 
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                  >
+                    <%- include('../partials/icon', { name: 'eye', class: 'h-4 w-4' }) %>
+                    <span>Ver Detalle</span>
+                  </a>
+                  <form 
+                    action="/tareas/finalizar/<%= tarea.id %>?divisionId=<%= divisionId %>" 
+                    method="POST" 
+                    style="display: inline;"
+                    onsubmit="return confirmarFinalizacion('<%= tarea.nombre %>')"
+                  >
+                    <button 
+                      type="submit" 
+                      class="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors duration-200"
+                      title="Finalizar tarea manualmente"
+                    >
+                      <%- include('../partials/icon', { name: 'check-circle', class: 'h-4 w-4' }) %>
+                      <span>Finalizar</span>
+                    </button>
+                  </form>
+                  <form 
+                    action="/tareas/eliminar/<%= tarea.id %>?divisionId=<%= divisionId %>" 
+                    method="POST" 
+                    style="display: inline;"
+                    onsubmit="return confirmarEliminacion('<%= tarea.nombre %>', <%= tarea.entregas ? tarea.entregas.length : 0 %>)"
+                  >
+                    <button 
+                      type="submit" 
+                      class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200"
+                      title="Eliminar tarea permanentemente"
+                    >
+                      <%- include('../partials/icon', { name: 'trash', class: 'h-4 w-4' }) %>
+                      <span>Eliminar</span>
+                    </button>
+                  </form>
+                </div>
               </td>
             </tr>
           <% }); %>
@@ -133,18 +205,178 @@
             </div>
             <div class="flex items-center gap-2">
               <%- include('../partials/icon', { name: 'calendar', class: 'h-4 w-4 text-gray-400' }) %>
-              <span>Culminación: <%= new Date(tarea.fechaCulminacion).toLocaleDateString('es-ES') %></span>
+              <div class="flex flex-col">
+                <span class="font-medium text-gray-900">
+                  Culminación: <%= new Date(tarea.fechaCulminacion).toLocaleDateString('es-ES') %>
+                </span>
+                <span class="text-xs text-gray-500 ml-5">
+                  <%= new Date(tarea.fechaCulminacion).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true }) %>
+                </span>
+              </div>
             </div>
           </div>
-          <a 
-            href="/tareas/detalle/<%= tarea.id %>" 
-            class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 w-full justify-center"
-          >
-            <%- include('../partials/icon', { name: 'eye', class: 'h-4 w-4' }) %>
-            <span>Ver Detalle</span>
-          </a>
+          <div class="flex flex-col gap-2">
+            <a 
+              href="/tareas/detalle/<%= tarea.id %>" 
+              class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 justify-center"
+            >
+              <%- include('../partials/icon', { name: 'eye', class: 'h-4 w-4' }) %>
+              <span>Ver Detalle</span>
+            </a>
+            <form 
+              action="/tareas/finalizar/<%= tarea.id %>?divisionId=<%= divisionId %>" 
+              method="POST"
+              onsubmit="return confirmarFinalizacion('<%= tarea.nombre %>')"
+            >
+              <button 
+                type="submit" 
+                class="w-full inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors duration-200 justify-center"
+              >
+                <%- include('../partials/icon', { name: 'check-circle', class: 'h-4 w-4' }) %>
+                <span>Finalizar Tarea</span>
+              </button>
+            </form>
+            <form 
+              action="/tareas/eliminar/<%= tarea.id %>?divisionId=<%= divisionId %>" 
+              method="POST"
+              onsubmit="return confirmarEliminacion('<%= tarea.nombre %>', <%= tarea.entregas ? tarea.entregas.length : 0 %>)"
+            >
+              <button 
+                type="submit" 
+                class="w-full inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 justify-center"
+              >
+                <%- include('../partials/icon', { name: 'trash', class: 'h-4 w-4' }) %>
+                <span>Eliminar Tarea</span>
+              </button>
+            </form>
+          </div>
         </div>
       <% }); %>
     </div>
   </div>
+  
+  <script>
+    function confirmarFinalizacion(nombreTarea) {
+      // Capturar el evento y el formulario
+      const currentEvent = event;
+      const form = currentEvent.target.closest('form');
+      
+      if (window.modal) {
+        // Usar modal personalizado
+        window.modal.confirm({
+          title: 'Finalizar Tarea',
+          message: `
+            <p class="mb-2">¿Está seguro de finalizar la tarea <strong>"${nombreTarea}"</strong> antes de su fecha de culminación?</p>
+            <p class="text-sm text-gray-500">Esta acción no se puede deshacer y la tarea se moverá a "Tareas Finalizadas".</p>
+          `,
+          confirmText: 'Sí, Finalizar',
+          cancelText: 'Cancelar',
+          type: 'warning',
+          onConfirm: function() {
+            // Enviar el formulario
+            if (form) {
+              form.submit();
+            }
+          }
+        });
+        return false; // Prevenir envío inmediato
+      } else {
+        // Fallback a confirm nativo
+        return confirm('¿Está seguro de finalizar la tarea "' + nombreTarea + '" antes de su fecha de culminación?\n\nEsta acción no se puede deshacer y la tarea se moverá a "Tareas Finalizadas".');
+      }
+    }
+    
+    function confirmarEliminacion(nombreTarea, cantidadEntregas) {
+      // Capturar el evento y el formulario
+      const currentEvent = event;
+      const form = currentEvent.target.closest('form');
+      
+      if (window.modal) {
+        // Construir mensaje
+        let mensaje = `<p class="mb-3">¿Está seguro de <strong class="text-red-600">ELIMINAR PERMANENTEMENTE</strong> la tarea <strong>"${nombreTarea}"</strong>?</p>`;
+        
+        if (cantidadEntregas > 0) {
+          mensaje += `
+            <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
+              <p class="text-sm font-semibold text-red-800 mb-2">🗑️ Esta acción eliminará:</p>
+              <ul class="text-sm text-red-700 list-disc list-inside space-y-1">
+                <li>La tarea completa</li>
+                <li>${cantidadEntregas} entrega${cantidadEntregas > 1 ? 's' : ''} registrada${cantidadEntregas > 1 ? 's' : ''}</li>
+              </ul>
+            </div>
+          `;
+        }
+        
+        mensaje += `
+          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <p class="text-sm font-semibold text-yellow-800">⚠️ ADVERTENCIA</p>
+            <p class="text-sm text-yellow-700">Esta acción NO se puede deshacer. La tarea y sus entregas se eliminarán permanentemente de la base de datos.</p>
+          </div>
+        `;
+        
+        // Mostrar modal
+        window.modal.confirm({
+          title: '⚠️ Eliminar Tarea',
+          message: mensaje,
+          confirmText: 'Sí, Eliminar Permanentemente',
+          cancelText: 'No, Cancelar',
+          type: 'danger',
+          onConfirm: function() {
+            // Mostrar toast de procesando
+            if (window.toast) {
+              window.toast.info('Eliminando tarea...', 2000);
+            }
+            // Enviar el formulario
+            if (form) {
+              form.submit();
+            }
+          }
+        });
+        return false; // Prevenir envío inmediato
+      } else {
+        // Fallback a confirm nativo
+        let mensaje = '⚠️ ¿Está seguro de ELIMINAR PERMANENTEMENTE la tarea "' + nombreTarea + '"?\n\n';
+        
+        if (cantidadEntregas > 0) {
+          mensaje += '🗑️ Esta acción eliminará:\n';
+          mensaje += '- La tarea\n';
+          mensaje += '- ' + cantidadEntregas + ' entrega' + (cantidadEntregas > 1 ? 's' : '') + ' registrada' + (cantidadEntregas > 1 ? 's' : '') + '\n\n';
+        }
+        
+        mensaje += '❌ ESTA ACCIÓN NO SE PUEDE DESHACER\n\n';
+        mensaje += '¿Desea continuar?';
+        
+        return confirm(mensaje);
+      }
+    }
+    
+    // Mostrar notificaciones toast automáticamente si hay mensajes
+    document.addEventListener('DOMContentLoaded', function() {
+      <% if (typeof success !== 'undefined' && success) { %>
+        if (window.toast) {
+          <% if (success === 'tarea_finalizada') { %>
+            window.toast.success('Tarea finalizada exitosamente');
+          <% } else if (success === 'tarea_eliminada') { %>
+            window.toast.success('Tarea eliminada exitosamente');
+          <% } else { %>
+            window.toast.success('<%= success %>');
+          <% } %>
+        }
+      <% } %>
+      
+      <% if (typeof error !== 'undefined' && error) { %>
+        if (window.toast) {
+          <% if (error === 'tarea_no_encontrada') { %>
+            window.toast.error('La tarea no fue encontrada');
+          <% } else if (error === 'tarea_ya_finalizada') { %>
+            window.toast.error('Esta tarea ya está finalizada');
+          <% } else if (error === 'error_servidor') { %>
+            window.toast.error('Error al procesar la solicitud');
+          <% } else { %>
+            window.toast.error('<%= error %>');
+          <% } %>
+        }
+      <% } %>
+    });
+  </script>
 <% } %>

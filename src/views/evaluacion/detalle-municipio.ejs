@@ -1,0 +1,136 @@
+<%- include('../layout', { body: `
+<div class="container mx-auto px-4 py-8">
+  <div class="bg-white rounded-lg shadow-md p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold text-gray-800">
+        Evaluación Detallada: ${evaluacion.municipioNombre}
+      </h1>
+      <a 
+        href="/evaluacion/avanzada?mes=${filtros.mes}&anio=${filtros.anio}&divisionId=${filtros.divisionId}"
+        class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+      >
+        Volver
+      </a>
+    </div>
+
+    <!-- Resumen de métricas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-4 rounded-lg shadow">
+        <div class="text-sm opacity-90">Puntuación Final</div>
+        <div class="text-3xl font-bold">${evaluacion.puntuacionFinal.toFixed(2)}</div>
+        <div class="text-xs opacity-75">de 100</div>
+      </div>
+      
+      <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-lg shadow">
+        <div class="text-sm opacity-90">Cobertura</div>
+        <div class="text-3xl font-bold">${evaluacion.porcentajeCobertura.toFixed(1)}%</div>
+        <div class="text-xs opacity-75">${evaluacion.tareasCompletadas}/${evaluacion.totalTareas} tareas</div>
+      </div>
+      
+      <div class="bg-gradient-to-br from-green-500 to-green-600 text-white p-4 rounded-lg shadow">
+        <div class="text-sm opacity-90">Puntualidad</div>
+        <div class="text-3xl font-bold">${evaluacion.promedioPuntualidad.toFixed(1)}</div>
+        <div class="text-xs opacity-75">${evaluacion.porcentajePuntualidad.toFixed(1)}% a tiempo</div>
+      </div>
+      
+      <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white p-4 rounded-lg shadow">
+        <div class="text-sm opacity-90">Calidad</div>
+        <div class="text-3xl font-bold">${evaluacion.promedioCalidad.toFixed(1)}</div>
+        <div class="text-xs opacity-75">${evaluacion.entregasCalificadas} calificadas</div>
+      </div>
+      
+      <div class="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-4 rounded-lg shadow">
+        <div class="text-sm opacity-90">Cantidad</div>
+        <div class="text-3xl font-bold">${evaluacion.promedioEntregasPorTarea.toFixed(1)}</div>
+        <div class="text-xs opacity-75">${evaluacion.totalEntregas} entregas</div>
+      </div>
+    </div>
+
+    <!-- Estadísticas de puntualidad -->
+    <div class="mb-8 bg-gray-50 p-4 rounded-lg">
+      <h3 class="font-semibold text-gray-800 mb-3">Estadísticas de Puntualidad</h3>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="flex items-center">
+          <div class="w-4 h-4 bg-green-500 rounded mr-2"></div>
+          <span class="text-gray-700">Entregas Puntuales: <strong>${evaluacion.entregasPuntuales}</strong></span>
+        </div>
+        <div class="flex items-center">
+          <div class="w-4 h-4 bg-red-500 rounded mr-2"></div>
+          <span class="text-gray-700">Entregas Tardías: <strong>${evaluacion.entregasTardias}</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detalle por tarea -->
+    <h2 class="text-2xl font-bold text-gray-800 mb-4">Detalle por Tarea</h2>
+    
+    ${evaluacion.detallesTareas.length > 0 ? `
+      <div class="overflow-x-auto">
+        <table class="min-w-full bg-white border border-gray-300">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Tarea</th>
+              <th class="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase">Estado</th>
+              <th class="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase">Entregas</th>
+              <th class="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase">Puntualidad</th>
+              <th class="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase">Calidad</th>
+              <th class="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase">Primera Entrega</th>
+              <th class="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase">Fecha Límite</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            ${evaluacion.detallesTareas.map(tarea => {
+              const getColorClass = (valor) => {
+                if (valor >= 80) return 'text-green-600 font-semibold';
+                if (valor >= 60) return 'text-yellow-600 font-semibold';
+                return 'text-red-600 font-semibold';
+              };
+              
+              const formatDate = (date) => {
+                if (!date) return '-';
+                const d = new Date(date);
+                return d.toLocaleDateString('es-ES', { 
+                  year: 'numeric', 
+                  month: '2-digit', 
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+              };
+              
+              return `
+                <tr class="hover:bg-gray-50">
+                  <td class="px-4 py-3 text-gray-900">${tarea.tareaNombre}</td>
+                  <td class="px-4 py-3 text-center">
+                    ${tarea.entregado 
+                      ? '<span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Entregado</span>'
+                      : '<span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">No Entregado</span>'
+                    }
+                  </td>
+                  <td class="px-4 py-3 text-center font-medium">${tarea.cantidadEntregas}</td>
+                  <td class="px-4 py-3 text-center ${getColorClass(tarea.puntualidad)}">
+                    ${tarea.entregado ? tarea.puntualidad.toFixed(2) : '-'}
+                  </td>
+                  <td class="px-4 py-3 text-center ${getColorClass(tarea.calidad)}">
+                    ${tarea.calidad > 0 ? tarea.calidad.toFixed(2) : '-'}
+                  </td>
+                  <td class="px-4 py-3 text-center text-sm text-gray-600">
+                    ${formatDate(tarea.primeraEntrega)}
+                  </td>
+                  <td class="px-4 py-3 text-center text-sm text-gray-600">
+                    ${formatDate(tarea.fechaLimite)}
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    ` : `
+      <div class="text-center py-8 text-gray-500">
+        No hay tareas registradas para este municipio.
+      </div>
+    `}
+  </div>
+</div>
+`}) %>

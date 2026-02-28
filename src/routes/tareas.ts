@@ -6,7 +6,10 @@ import {
   showDetalle,
   agregarEntrega,
   eliminarEntrega,
-  showFinalizadas
+  showFinalizadas,
+  calificarEntrega,
+  finalizarTareaManual,
+  eliminarTarea
 } from '../controllers/tareasController';
 import { requireAuth } from '../middleware/auth';
 import { uploadEntrega } from '../middleware/upload';
@@ -25,6 +28,9 @@ router.get('/proceso', showProceso);
 router.get('/detalle/:id', showDetalle);
 router.post('/agregar-entrega', uploadEntrega.single('archivo'), agregarEntrega);
 router.post('/entrega/eliminar/:id', eliminarEntrega);
+router.post('/entrega/calificar/:id', calificarEntrega);
+router.post('/finalizar/:id', finalizarTareaManual);
+router.post('/eliminar/:id', eliminarTarea);
 
 // Rutas para tareas finalizadas
 router.get('/finalizadas', showFinalizadas);

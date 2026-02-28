@@ -159,6 +159,9 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
               Entregas
             </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+              Acciones
+            </th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -187,7 +190,7 @@
                     <summary class="cursor-pointer list-none">
                       <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 hover:bg-green-200 transition-colors">
                         <%- include('../partials/icon', { name: 'check-circle', class: 'h-4 w-4' }) %>
-                        <%= tarea.entregas.length %> municipio<%= tarea.entregas.length !== 1 ? 's' : '' %>
+                        <%= tarea.entregas.length %> entrega<%= tarea.entregas.length !== 1 ? 's' : '' %>
                       </span>
                     </summary>
                     <div class="mt-2 ml-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
@@ -216,6 +219,15 @@
                     Sin entregas
                   </span>
                 <% } %>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">
+                <a 
+                  href="/tareas/detalle/<%= tarea.id %>" 
+                  class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                >
+                  <%- include('../partials/icon', { name: 'eye', class: 'h-4 w-4' }) %>
+                  <span>Ver Detalle</span>
+                </a>
               </td>
             </tr>
           <% }); %>
@@ -261,7 +273,7 @@
                   <summary class="cursor-pointer list-none">
                     <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                       <%- include('../partials/icon', { name: 'check-circle', class: 'h-4 w-4' }) %>
-                      <%= tarea.entregas.length %> municipio<%= tarea.entregas.length !== 1 ? 's' : '' %>
+                      <%= tarea.entregas.length %> entrega<%= tarea.entregas.length !== 1 ? 's' : '' %>
                     </span>
                   </summary>
                   <div class="mt-2 p-3 bg-gray-50 rounded-lg">
@@ -292,6 +304,16 @@
                 </span>
               <% } %>
             </div>
+          </div>
+          
+          <div class="mt-3 pt-3 border-t border-gray-200">
+            <a 
+              href="/tareas/detalle/<%= tarea.id %>" 
+              class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 w-full justify-center"
+            >
+              <%- include('../partials/icon', { name: 'eye', class: 'h-4 w-4' }) %>
+              <span>Ver Detalle</span>
+            </a>
           </div>
         </div>
       <% }); %>

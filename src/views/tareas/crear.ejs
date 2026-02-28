@@ -23,7 +23,7 @@
   <!-- Form Card -->
   <div class="lg:col-span-2">
     <div class="bg-white rounded-lg shadow-md p-6">
-      <form action="/tareas/crear" method="POST" class="space-y-6">
+      <form action="/tareas/crear" method="POST" class="space-y-6" id="formCrearTarea" novalidate>
         <!-- Nombre de la Tarea -->
         <div>
           <label for="nombre" class="block text-sm font-medium text-gray-700 mb-2">
@@ -72,25 +72,47 @@
           </div>
         </div>
         
-        <!-- Fechas -->
+        <!-- Checkbox Tarea Retroactiva -->
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <label class="flex items-start gap-3 cursor-pointer">
+            <input 
+              type="checkbox" 
+              id="esRetroactiva" 
+              name="esRetroactiva"
+              class="mt-1 h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded"
+            >
+            <div class="flex-1">
+              <span class="text-sm font-medium text-amber-900">
+                Esta es una tarea retroactiva (fechas pasadas)
+              </span>
+              <p class="text-xs text-amber-700 mt-1">
+                Marque esta opción si está registrando una tarea que ya ocurrió en el pasado. 
+                Esto le permitirá ingresar fechas anteriores a hoy.
+              </p>
+            </div>
+          </label>
+        </div>
+        
+        <!-- Fechas y Horas -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Fecha de Inicio -->
+          <!-- Fecha y Hora de Inicio -->
           <div>
             <label for="fechaInicio" class="block text-sm font-medium text-gray-700 mb-2">
-              Fecha de Inicio <span class="text-red-500">*</span>
+              Fecha y Hora de Inicio <span class="text-red-500">*</span>
             </label>
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <%- include('../partials/icon', { name: 'calendar', class: 'h-5 w-5 text-gray-400' }) %>
               </div>
               <input 
-                type="date" 
+                type="datetime-local" 
                 id="fechaInicio" 
                 name="fechaInicio" 
                 class="pl-10 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
                 required
               >
             </div>
+            <p class="mt-1 text-xs text-gray-500">Especifique fecha y hora exacta de inicio</p>
           </div>
           
           <!-- Fecha de Culminación -->
@@ -103,20 +125,48 @@
                 <%- include('../partials/icon', { name: 'calendar', class: 'h-5 w-5 text-gray-400' }) %>
               </div>
               <input 
-                type="date" 
+                type="datetime-local" 
                 id="fechaCulminacion" 
                 name="fechaCulminacion" 
                 class="pl-10 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
                 required
               >
             </div>
+            <p class="mt-1 text-xs text-gray-500">Fecha límite de la tarea</p>
           </div>
+        </div>
+        
+        <!-- Hora de Culminación (condicional) -->
+        <div id="horaContainer" class="hidden">
+          <label for="horaCulminacion" class="block text-sm font-medium text-gray-700 mb-2">
+            Hora de Culminación <span id="horaRequired" class="text-red-500 hidden">*</span>
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <%- include('../partials/icon', { name: 'clock', class: 'h-5 w-5 text-gray-400' }) %>
+            </div>
+            <input 
+              type="time" 
+              id="horaCulminacion" 
+              name="horaCulminacion" 
+              class="pl-10 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+            >
+          </div>
+          <p class="mt-1 text-xs text-gray-500" id="horaMensaje">
+            Opcional para tareas de varios días (si no se especifica, finaliza a las 23:59:59)
+          </p>
+        </div>
+        
+        <!-- Mensaje de validación -->
+        <div id="validacionFechas" class="hidden bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg text-sm">
+          <span id="mensajeValidacion"></span>
         </div>
         
         <!-- Buttons -->
         <div class="flex flex-col sm:flex-row gap-3 pt-4">
           <button 
             type="submit" 
+            id="btnSubmit"
             class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200"
           >
             <%- include('../partials/icon', { name: 'plus', class: 'h-5 w-5' }) %>
@@ -131,6 +181,233 @@
           </a>
         </div>
       </form>
+      
+      <script>
+        // Prevenir validación HTML5 nativa COMPLETAMENTE
+        document.addEventListener('DOMContentLoaded', function() {
+          const form = document.getElementById('formCrearTarea');
+          const fechaInicio = document.getElementById('fechaInicio');
+          const fechaCulminacion = document.getElementById('fechaCulminacion');
+          
+          // Remover TODOS los mensajes de validación HTML5
+          [fechaInicio, fechaCulminacion].forEach(input => {
+            input.addEventListener('invalid', function(e) {
+              e.preventDefault();
+              e.stopPropagation();
+              return false;
+            }, true);
+            
+            // Limpiar cualquier mensaje de validación personalizado
+            input.setCustomValidity('');
+          });
+          
+          // Interceptar el submit para manejar validación manualmente
+          form.addEventListener('submit', function(e) {
+            // Limpiar mensajes de validación
+            fechaInicio.setCustomValidity('');
+            fechaCulminacion.setCustomValidity('');
+          }, true);
+        });
+        
+        // Validación de fechas en tiempo real
+        const fechaInicio = document.getElementById('fechaInicio');
+        const fechaCulminacion = document.getElementById('fechaCulminacion');
+        const horaCulminacion = document.getElementById('horaCulminacion');
+        const horaContainer = document.getElementById('horaContainer');
+        const horaRequired = document.getElementById('horaRequired');
+        const horaMensaje = document.getElementById('horaMensaje');
+        const validacionDiv = document.getElementById('validacionFechas');
+        const mensajeValidacion = document.getElementById('mensajeValidacion');
+        const btnSubmit = document.getElementById('btnSubmit');
+        const form = document.getElementById('formCrearTarea');
+        const esRetroactiva = document.getElementById('esRetroactiva');
+        
+        // Manejar cambio de checkbox retroactiva
+        esRetroactiva.addEventListener('change', function() {
+          if (this.checked) {
+            // Permitir fechas pasadas
+            fechaInicio.removeAttribute('min');
+            fechaCulminacion.removeAttribute('min');
+            
+            // Mostrar advertencia
+            validacionDiv.classList.remove('hidden');
+            validacionDiv.classList.remove('bg-green-50', 'border-green-200', 'text-green-800', 'bg-red-50', 'border-red-200', 'text-red-800');
+            validacionDiv.classList.add('bg-amber-50', 'border-amber-200', 'text-amber-800');
+            mensajeValidacion.textContent = '⚠️ Modo retroactivo activado: Puede ingresar fechas pasadas. La tarea se creará como "finalizada".';
+          } else {
+            // Restringir a fechas futuras
+            const ahora = new Date();
+            // Ajustar a zona horaria local sin conversión UTC
+            const year = ahora.getFullYear();
+            const month = String(ahora.getMonth() + 1).padStart(2, '0');
+            const day = String(ahora.getDate()).padStart(2, '0');
+            const hours = String(ahora.getHours()).padStart(2, '0');
+            const minutes = String(ahora.getMinutes()).padStart(2, '0');
+            const ahoraStr = `${year}-${month}-${day}T${hours}:${minutes}`;
+            fechaInicio.setAttribute('min', ahoraStr);
+            
+            validarFechas();
+          }
+        });
+        
+        function esMismoDia() {
+          if (!fechaInicio.value || !fechaCulminacion.value) return false;
+          
+          const inicio = new Date(fechaInicio.value);
+          // Extraer solo la fecha de culminación (primeros 10 caracteres YYYY-MM-DD)
+          const fechaCulmStr = fechaCulminacion.value.substring(0, 10);
+          const fechaFin = new Date(fechaCulmStr);
+          
+          return inicio.toDateString() === fechaFin.toDateString();
+        }
+        
+        function actualizarCampoHora() {
+          const mismoDia = esMismoDia();
+          
+          if (fechaCulminacion.value) {
+            // Si el campo de culminación no tiene hora, agregar 23:59
+            if (fechaCulminacion.value.length === 10) {
+              // Solo tiene fecha (YYYY-MM-DD), agregar hora por defecto
+              fechaCulminacion.value = fechaCulminacion.value + 'T23:59';
+            }
+            
+            // Ocultar el campo de hora separado ya que ahora está integrado
+            horaContainer.classList.add('hidden');
+          }
+          
+          validarFechas();
+        }
+        
+        function validarFechas() {
+          if (!fechaInicio.value || !fechaCulminacion.value) {
+            if (!esRetroactiva.checked) {
+              validacionDiv.classList.add('hidden');
+            }
+            btnSubmit.disabled = false;
+            return true;
+          }
+          
+          const inicio = new Date(fechaInicio.value);
+          const culminacion = new Date(fechaCulminacion.value);
+          const ahora = new Date();
+          
+          // Extraer solo las fechas para comparar si es mismo día
+          const inicioFecha = inicio.toDateString();
+          const culminacionFecha = culminacion.toDateString();
+          const mismoDia = inicioFecha === culminacionFecha;
+          
+          // Validar fechas según si es retroactiva o no
+          if (!esRetroactiva.checked) {
+            if (mismoDia) {
+              // Para mismo día: validar que la hora de culminación sea futura
+              if (culminacion <= ahora) {
+                validacionDiv.classList.remove('hidden');
+                validacionDiv.classList.remove('bg-yellow-50', 'border-yellow-200', 'text-yellow-800', 'bg-green-50', 'border-green-200', 'text-green-800', 'bg-amber-50', 'border-amber-200', 'text-amber-800');
+                validacionDiv.classList.add('bg-red-50', 'border-red-200', 'text-red-800');
+                mensajeValidacion.textContent = '❌ La hora de culminación debe ser futura. Por favor seleccione una hora posterior a la actual.';
+                btnSubmit.disabled = true;
+                return false;
+              }
+            } else {
+              // Para varios días: validar que la fecha de inicio no sea pasada (solo fecha, no hora)
+              const inicioSoloFecha = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate());
+              const ahoraSoloFecha = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+              
+              if (inicioSoloFecha < ahoraSoloFecha) {
+                validacionDiv.classList.remove('hidden');
+                validacionDiv.classList.remove('bg-yellow-50', 'border-yellow-200', 'text-yellow-800', 'bg-green-50', 'border-green-200', 'text-green-800', 'bg-amber-50', 'border-amber-200', 'text-amber-800');
+                validacionDiv.classList.add('bg-red-50', 'border-red-200', 'text-red-800');
+                mensajeValidacion.textContent = '❌ La fecha de inicio no puede ser en el pasado. Active "Tarea Retroactiva" si desea crear una tarea con fechas pasadas.';
+                btnSubmit.disabled = true;
+                return false;
+              }
+            }
+          }
+          
+          // Calcular diferencia en horas
+          const diferenciaMs = culminacion - inicio;
+          const diferenciaHoras = diferenciaMs / (1000 * 60 * 60);
+          
+          if (diferenciaHoras <= 0) {
+            validacionDiv.classList.remove('hidden');
+            validacionDiv.classList.remove('bg-yellow-50', 'border-yellow-200', 'text-yellow-800', 'bg-green-50', 'border-green-200', 'text-green-800', 'bg-amber-50', 'border-amber-200', 'text-amber-800');
+            validacionDiv.classList.add('bg-red-50', 'border-red-200', 'text-red-800');
+            mensajeValidacion.textContent = '❌ La fecha y hora de culminación debe ser posterior a la de inicio';
+            btnSubmit.disabled = true;
+            return false;
+          }
+          
+          if (mismoDia && diferenciaHoras < 1) {
+            validacionDiv.classList.remove('hidden');
+            validacionDiv.classList.remove('bg-green-50', 'border-green-200', 'text-green-800', 'bg-red-50', 'border-red-200', 'text-red-800', 'bg-amber-50', 'border-amber-200', 'text-amber-800');
+            validacionDiv.classList.add('bg-yellow-50', 'border-yellow-200', 'text-yellow-800');
+            mensajeValidacion.textContent = '⚠️ La tarea debe tener al menos 1 hora de duración (actualmente: ' + Math.round(diferenciaHoras * 60) + ' minutos)';
+            btnSubmit.disabled = true;
+            return false;
+          }
+          
+          // Todo OK
+          validacionDiv.classList.remove('hidden');
+          validacionDiv.classList.remove('bg-yellow-50', 'border-yellow-200', 'text-yellow-800', 'bg-red-50', 'border-red-200', 'text-red-800', 'bg-amber-50', 'border-amber-200', 'text-amber-800');
+          validacionDiv.classList.add('bg-green-50', 'border-green-200', 'text-green-800');
+          
+          const dias = Math.floor(diferenciaHoras / 24);
+          const horas = Math.floor(diferenciaHoras % 24);
+          const minutos = Math.floor((diferenciaHoras % 1) * 60);
+          let duracion = '';
+          if (dias > 0) duracion += dias + ' día' + (dias > 1 ? 's' : '') + ' ';
+          if (horas > 0) duracion += horas + ' hora' + (horas > 1 ? 's' : '') + ' ';
+          if (minutos > 0 && dias === 0) duracion += minutos + ' minuto' + (minutos > 1 ? 's' : '');
+          
+          // Extraer hora de culminación del datetime-local
+          const horaCulm = culminacion.toTimeString().substring(0, 5);
+          const fechaCulm = culminacion.toLocaleDateString('es-ES');
+          let mensaje = '✓ Duración: ' + duracion.trim() + ' | Finaliza: ' + fechaCulm + ' a las ' + horaCulm;
+          
+          if (esRetroactiva.checked) {
+            mensaje += ' | 📋 Tarea retroactiva - se creará como "finalizada"';
+          }
+          
+          mensajeValidacion.textContent = mensaje;
+          btnSubmit.disabled = false;
+          return true;
+        }
+        
+        fechaInicio.addEventListener('change', actualizarCampoHora);
+        fechaCulminacion.addEventListener('change', actualizarCampoHora);
+        horaCulminacion.addEventListener('change', validarFechas);
+        
+        form.addEventListener('submit', function(e) {
+          if (!validarFechas()) {
+            e.preventDefault();
+            if (window.modal) {
+              window.modal.notify({
+                title: 'Error de Validación',
+                message: 'Por favor corrija los errores en las fechas antes de continuar.',
+                type: 'error',
+                buttonText: 'Entendido'
+              });
+            } else {
+              alert('Por favor corrija los errores en las fechas antes de continuar');
+            }
+          }
+        });
+        
+        // Inicializar restricción de fechas
+        window.addEventListener('load', function() {
+          if (!esRetroactiva.checked) {
+            const ahora = new Date();
+            // Ajustar a zona horaria local sin conversión UTC
+            const year = ahora.getFullYear();
+            const month = String(ahora.getMonth() + 1).padStart(2, '0');
+            const day = String(ahora.getDate()).padStart(2, '0');
+            const hours = String(ahora.getHours()).padStart(2, '0');
+            const minutes = String(ahora.getMinutes()).padStart(2, '0');
+            const ahoraStr = `${year}-${month}-${day}T${hours}:${minutes}`;
+            fechaInicio.setAttribute('min', ahoraStr);
+          }
+        });
+      </script>
     </div>
   </div>
   
@@ -149,8 +426,25 @@
           Desde allí podrá registrar las entregas de los municipios y hacer seguimiento del cumplimiento.
         </p>
         <p>
-          Las tareas cambiarán automáticamente a estado <strong>"Finalizada"</strong> cuando se alcance la fecha de culminación.
+          Las tareas cambiarán automáticamente a estado <strong>"Finalizada"</strong> cuando se alcance la fecha y hora de culminación.
         </p>
+        <div class="border-t border-blue-200 pt-3 mt-3">
+          <p class="font-semibold mb-2">⏰ Especificación de Hora:</p>
+          <ul class="list-disc list-inside space-y-1 text-xs">
+            <li><strong>Mismo día:</strong> Hora de culminación obligatoria (mínimo 1 hora de duración)</li>
+            <li><strong>Varios días:</strong> Hora opcional (por defecto finaliza a las 23:59:59)</li>
+          </ul>
+        </div>
+        <div class="border-t border-blue-200 pt-3 mt-3">
+          <p class="font-semibold mb-2">📋 Tareas Retroactivas:</p>
+          <ul class="list-disc list-inside space-y-1 text-xs">
+            <li>Active el checkbox para crear tareas con fechas pasadas</li>
+            <li>Útil si olvidó registrar una tarea a tiempo</li>
+            <li>Se crearán como "finalizadas" si la fecha ya pasó</li>
+            <li>Puede agregar entregas desde "Tareas Finalizadas"</li>
+            <li>Se incluyen normalmente en evaluaciones y reportes</li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>

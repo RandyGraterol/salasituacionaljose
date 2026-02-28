@@ -8,6 +8,7 @@ export interface EntregaAttributes {
   municipioId: number;
   fechaHoraEntrega: Date;
   archivoUrl?: string;
+  calificacion?: number; // Calificación de calidad (0-100)
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -22,6 +23,7 @@ class Entrega extends Model<EntregaAttributes, EntregaCreationAttributes> implem
   public municipioId!: number;
   public fechaHoraEntrega!: Date;
   public archivoUrl?: string;
+  public calificacion?: number;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
@@ -60,6 +62,14 @@ Entrega.init(
     archivoUrl: {
       type: DataTypes.STRING(500),
       allowNull: true
+    },
+    calificacion: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      validate: {
+        min: 0,
+        max: 100
+      }
     }
   },
   {

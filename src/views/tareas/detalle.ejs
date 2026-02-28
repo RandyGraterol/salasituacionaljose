@@ -22,6 +22,8 @@
         Este municipio ya ha registrado entrega para esta tarea
       <% } else if (error === 'entrega_no_encontrada') { %>
         La entrega no fue encontrada
+      <% } else if (error === 'calificacion_invalida') { %>
+        La calificación debe ser un número entre 0 y 100
       <% } else { %>
         Error al procesar la solicitud
       <% } %>
@@ -37,6 +39,8 @@
         Entrega registrada exitosamente
       <% } else if (success === 'entrega_eliminada') { %>
         Entrega eliminada exitosamente
+      <% } else if (success === 'entrega_calificada') { %>
+        Entrega calificada exitosamente
       <% } %>
     </span>
   </div>
@@ -203,6 +207,9 @@
               Archivo
             </th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Calificación
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Acciones
             </th>
           </tr>
@@ -246,6 +253,38 @@
                   </a>
                 <% } else { %>
                   <span class="text-gray-400 text-xs">Sin archivo</span>
+                <% } %>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">
+                <% if (entrega.calificacion !== null && entrega.calificacion !== undefined) { %>
+                  <div class="flex items-center gap-2">
+                    <span class="px-3 py-1 rounded-full text-sm font-semibold <%= 
+                      entrega.calificacion >= 80 ? 'bg-green-100 text-green-800' :
+                      entrega.calificacion >= 60 ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    %>">
+                      <%= entrega.calificacion %>/100
+                    </span>
+                  </div>
+                <% } else { %>
+                  <form action="/tareas/entrega/calificar/<%= entrega.id %>" method="POST" class="flex items-center gap-2">
+                    <input type="hidden" name="tareaId" value="<%= tarea.id %>">
+                    <input 
+                      type="number" 
+                      name="calificacion" 
+                      min="0" 
+                      max="100" 
+                      placeholder="0-100"
+                      class="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                      required
+                    >
+                    <button 
+                      type="submit" 
+                      class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
+                    >
+                      Calificar
+                    </button>
+                  </form>
                 <% } %>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm">
@@ -306,6 +345,45 @@
               </a>
             </div>
           <% } %>
+          
+          <!-- Calificación -->
+          <div class="mb-4">
+            <% if (entrega.calificacion !== null && entrega.calificacion !== undefined) { %>
+              <div class="flex items-center gap-2">
+                <span class="text-sm text-gray-600">Calificación:</span>
+                <span class="px-3 py-1 rounded-full text-sm font-semibold <%= 
+                  entrega.calificacion >= 80 ? 'bg-green-100 text-green-800' :
+                  entrega.calificacion >= 60 ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-red-100 text-red-800'
+                %>">
+                  <%= entrega.calificacion %>/100
+                </span>
+              </div>
+            <% } else { %>
+              <form action="/tareas/entrega/calificar/<%= entrega.id %>" method="POST" class="flex flex-col gap-2">
+                <input type="hidden" name="tareaId" value="<%= tarea.id %>">
+                <label class="text-sm text-gray-600">Calificar entrega:</label>
+                <div class="flex items-center gap-2">
+                  <input 
+                    type="number" 
+                    name="calificacion" 
+                    min="0" 
+                    max="100" 
+                    placeholder="0-100"
+                    class="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                  <button 
+                    type="submit" 
+                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                  >
+                    Calificar
+                  </button>
+                </div>
+              </form>
+            <% } %>
+          </div>
+          
           <form action="/tareas/entrega/eliminar/<%= entrega.id %>?tareaId=<%= tarea.id %>" method="POST" onsubmit="return confirmarEliminacion('¿Está seguro de eliminar esta entrega?')">
             <button 
               type="submit" 
@@ -333,3 +411,35 @@
     </div>
   <% } %>
 </div>
+
+<script>
+  function confirmarEliminacion(mensaje) {
+    // Capturar el evento y el formulario
+    const currentEvent = event;
+    const form = currentEvent.target.closest('form');
+    
+    if (window.modal) {
+      window.modal.confirm({
+        title: 'Eliminar Entrega',
+        message: `
+          <p class="mb-3">${mensaje}</p>
+          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <p class="text-sm font-semibold text-yellow-800">⚠️ Advertencia</p>
+            <p class="text-sm text-yellow-700">Esta acción no se puede deshacer.</p>
+          </div>
+        `,
+        confirmText: 'Sí, Eliminar',
+        cancelText: 'Cancelar',
+        type: 'danger',
+        onConfirm: function() {
+          if (form) {
+            form.submit();
+          }
+        }
+      });
+      return false;
+    } else {
+      return confirm(mensaje);
+    }
+  }
+</script>
