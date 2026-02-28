@@ -101,95 +101,78 @@ export const crear = async (req: Request, res: Response): Promise<void> => {
         fechaCulminacion_raw: fechaCulminacion,
         inicio_parsed: inicio.toISOString(),
         culminacion_parsed: culminacion.toISOString(),
-        inicio_local: inicio.toString(),
-        culminacion_local: culminacion.toString(),
         ahora: ahora.toISOString()
       }
     });
     
-    // Verificar si es el mismo día
-    const mismoDia = inicio.toDateString() === culminacion.toDateString();
-    
-    // Validar fechas según si es retroactiva o no
-    if (!esRetroactivaBool) {
-      if (mismoDia) {
-        // Para mismo día, la hora de culminación debe ser futura
-        if (culminacion <= ahora) {
-          logger.warn('Validación fallida: hora de culminación en el pasado', {
-            action: 'crear_tarea_validation_failed',
-            userId: sessionUser?.id,
-            details: { culminacion: culminacion.toISOString(), ahora: ahora.toISOString() }
-          });
-
-          const divisiones = await Division.findAll({ order: [['nombre', 'ASC']] });
-          return res.render('tareas/crear', {
-            title: 'Crear Tarea',
-            divisiones,
-            error: 'La hora de culminación debe ser futura. Por favor seleccione una hora posterior a la actual.',
-            success: null,
-            currentPage: 'crear'
-          });
-        }
-      } else {
-        // Para varios días, la fecha de inicio no debe ser pasada
-        const inicioSoloFecha = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate());
-        const ahoraSoloFecha = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
-        
-        if (inicioSoloFecha < ahoraSoloFecha) {
-          logger.warn('Validación fallida: fecha de inicio en el pasado', {
-            action: 'crear_tarea_validation_failed',
-            userId: sessionUser?.id
-          });
-
-          const divisiones = await Division.findAll({ order: [['nombre', 'ASC']] });
-          return res.render('tareas/crear', {
-            title: 'Crear Tarea',
-            divisiones,
-            error: 'La fecha de inicio no puede ser en el pasado. Active "Tarea Retroactiva" si desea crear una tarea con fechas pasadas.',
-            success: null,
-            currentPage: 'crear'
-          });
-        }
-      }
-    }
-
-    // Validar que la fecha/hora de culminación sea posterior a la de inicio
-    if (inicio >= culminacion) {
-      logger.warn('Validación fallida: fecha/hora de inicio posterior o igual a culminación', {
-        action: 'crear_tarea_date_validation_failed',
+    // Validar que la fecha de culminación sea posterior a la de inicio
+    if (culminacion <= inicio) {
+      logger.warn('Validación fallida: fecha de culminación no es posterior a inicio', {
+        action: 'crear_tarea_validation_failed',
         userId: sessionUser?.id,
-        details: { fechaInicio, fechaCulminacion }
+        details: { 
+          inicio: inicio.toISOString(), 
+          culminacion: culminacion.toISOString() 
+        }
       });
 
       const divisiones = await Division.findAll({ order: [['nombre', 'ASC']] });
       return res.render('tareas/crear', {
         title: 'Crear Tarea',
         divisiones,
-        error: 'La fecha y hora de culminación debe ser posterior a la fecha y hora de inicio',
+        error: 'La fecha y hora de culminación debe ser posterior a la fecha y hora de inicio.',
         success: null,
         currentPage: 'crear'
       });
     }
-
-    // Validar que haya al menos 1 hora de diferencia para tareas del mismo día
-    if (mismoDia) {
-      const diferenciaHoras = (culminacion.getTime() - inicio.getTime()) / (1000 * 60 * 60);
-      if (diferenciaHoras < 1) {
-        logger.warn('Validación fallida: diferencia de tiempo muy corta', {
-          action: 'crear_tarea_time_validation_failed',
+    
+    // Validar fechas según si es retroactiva o no
+    if (!esRetroactivaBool) {
+      // Para tareas NO retroactivas, validar que la culminación sea futura
+      // Comparamos con la hora del servidor pero damos un margen de 5 minutos
+      // para compensar diferencias de zona horaria y tiempo de procesamiento
+      const margenMinutos = 5;
+      const ahoraConMargen = new Date(ahora.getTime() - (margenMinutos * 60 * 1000));
+      
+      if (culminacion <= ahoraConMargen) {
+        logger.warn('Validación fallida: fecha de culminación en el pasado', {
+          action: 'crear_tarea_validation_failed',
           userId: sessionUser?.id,
-          details: { diferenciaHoras }
+          details: { 
+            culminacion: culminacion.toISOString(), 
+            ahora: ahora.toISOString(),
+            ahoraConMargen: ahoraConMargen.toISOString()
+          }
         });
 
         const divisiones = await Division.findAll({ order: [['nombre', 'ASC']] });
         return res.render('tareas/crear', {
           title: 'Crear Tarea',
           divisiones,
-          error: 'La tarea debe tener al menos 1 hora de duración entre inicio y culminación',
+          error: 'La fecha y hora de culminación debe ser futura. Si desea crear una tarea con fechas pasadas, active la opción "Tarea Retroactiva".',
           success: null,
           currentPage: 'crear'
         });
       }
+    }
+
+    // Validar que haya al menos 1 hora de diferencia
+    const diferenciaHoras = (culminacion.getTime() - inicio.getTime()) / (1000 * 60 * 60);
+    if (diferenciaHoras < 1) {
+      logger.warn('Validación fallida: diferencia de tiempo muy corta', {
+        action: 'crear_tarea_time_validation_failed',
+        userId: sessionUser?.id,
+        details: { diferenciaHoras }
+      });
+
+      const divisiones = await Division.findAll({ order: [['nombre', 'ASC']] });
+      return res.render('tareas/crear', {
+        title: 'Crear Tarea',
+        divisiones,
+        error: 'La tarea debe tener al menos 1 hora de duración entre inicio y culminación',
+        success: null,
+        currentPage: 'crear'
+      });
     }
     
     // Determinar estado inicial
