@@ -85,11 +85,14 @@ export const crear = async (req: Request, res: Response): Promise<void> => {
     const ahora = new Date();
     const esRetroactivaBool = esRetroactiva === 'on';
     
-    // Construir fecha de inicio completa
+    // IMPORTANTE: Los campos datetime-local envían la fecha SIN zona horaria
+    // Por ejemplo: "2026-02-28T15:35" se interpreta como hora LOCAL del servidor
+    // Para evitar problemas, debemos tratarlas como strings y construir las fechas correctamente
+    
+    // Construir fecha de inicio - agregar 'Z' NO porque queremos hora local
     const inicio = new Date(fechaInicio);
     
     // Construir fecha de culminación
-    // Ahora fechaCulminacion viene como datetime-local (YYYY-MM-DDTHH:MM)
     const culminacion = new Date(fechaCulminacion);
     
     // Log para debug
@@ -101,7 +104,8 @@ export const crear = async (req: Request, res: Response): Promise<void> => {
         fechaCulminacion_raw: fechaCulminacion,
         inicio_parsed: inicio.toISOString(),
         culminacion_parsed: culminacion.toISOString(),
-        ahora: ahora.toISOString()
+        ahora: ahora.toISOString(),
+        timezone_offset: ahora.getTimezoneOffset()
       }
     });
     
@@ -129,19 +133,21 @@ export const crear = async (req: Request, res: Response): Promise<void> => {
     // Validar fechas según si es retroactiva o no
     if (!esRetroactivaBool) {
       // Para tareas NO retroactivas, validar que la culminación sea futura
-      // Comparamos con la hora del servidor pero damos un margen de 5 minutos
-      // para compensar diferencias de zona horaria y tiempo de procesamiento
-      const margenMinutos = 5;
-      const ahoraConMargen = new Date(ahora.getTime() - (margenMinutos * 60 * 1000));
+      // NO comparamos con la hora del servidor directamente porque puede estar en otra zona horaria
+      // En su lugar, solo verificamos que culminación > inicio (ya validado arriba)
+      // La validación de "futuro" se hace en el cliente con JavaScript
       
-      if (culminacion <= ahoraConMargen) {
-        logger.warn('Validación fallida: fecha de culminación en el pasado', {
+      // Sin embargo, agregamos una validación mínima: la culminación debe ser al menos
+      // posterior a hace 1 hora (para evitar crear tareas que ya expiraron)
+      const hace1Hora = new Date(ahora.getTime() - (60 * 60 * 1000));
+      
+      if (culminacion < hace1Hora) {
+        logger.warn('Validación fallida: fecha de culminación muy en el pasado', {
           action: 'crear_tarea_validation_failed',
           userId: sessionUser?.id,
           details: { 
             culminacion: culminacion.toISOString(), 
-            ahora: ahora.toISOString(),
-            ahoraConMargen: ahoraConMargen.toISOString()
+            hace1Hora: hace1Hora.toISOString()
           }
         });
 
@@ -149,7 +155,7 @@ export const crear = async (req: Request, res: Response): Promise<void> => {
         return res.render('tareas/crear', {
           title: 'Crear Tarea',
           divisiones,
-          error: 'La fecha y hora de culminación debe ser futura. Si desea crear una tarea con fechas pasadas, active la opción "Tarea Retroactiva".',
+          error: 'La fecha y hora de culminación parece estar en el pasado. Si desea crear una tarea con fechas pasadas, active la opción "Tarea Retroactiva".',
           success: null,
           currentPage: 'crear'
         });
